@@ -293,7 +293,7 @@
     
     // --- Benutzerverwaltung ---
     async function loadUsers() {
-      const response = await fetch("https://planetpay.onrender.com:3000/api/admin/users");
+      const response = await fetch("https://planetpay.onrender.com:10000/api/admin/users");
       const users = await response.json();
       const tbody = document.getElementById("userTable").querySelector("tbody");
       tbody.innerHTML = "";
@@ -328,7 +328,7 @@
       const username = document.getElementById("editUsername").value;
       const password = document.getElementById("editPassword").value;
       const balance = parseFloat(document.getElementById("editBalance").value);
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/users/${currentEditUserId}`, {
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/users/${currentEditUserId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password, balance })
@@ -347,7 +347,7 @@
     }
     
     async function toggleUserBan(id, banStatus) {
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/users/${id}`, {
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/users/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ banned: banStatus })
@@ -367,7 +367,7 @@
         return;
       }
       // Erstelle einen neuen API Key-Datensatz in der Collection "apikeys"
-      const response = await fetch("https://planetpay.onrender.com:3000/api/apikeys", {
+      const response = await fetch("https://planetpay.onrender.com:10000/api/apikeys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: shopName })
@@ -382,7 +382,7 @@
     }
     
     function loadApiKeys() {
-      fetch("http://localhost:3000/api/apikeys")
+      fetch("https://planetpay.onrender.com:10000/api/apikeys")
         .then(response => response.json())
         .then(records => {
           const tbody = document.getElementById("apiKeyTable").querySelector("tbody");
@@ -408,7 +408,7 @@
     }
     
     async function toggleApiKeyBan(id, banStatus) {
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/apikeys/${id}`, {
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/apikeys/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ banned: banStatus })
@@ -422,7 +422,7 @@
     
     async function deleteApiKey(id) {
       if(!confirm("Soll dieser API Key-Datensatz wirklich gelöscht werden?")) return;
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/apikeys/${id}`, { method: "DELETE" });
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/apikeys/${id}`, { method: "DELETE" });
       if(response.ok) {
         loadApiKeys();
       } else {
@@ -474,7 +474,7 @@
       const payload = { name, owner, apiKey, color, textStyle, font, status, products };
       
       try {
-        const response = await fetch("https://planetpay.onrender.com:3000/api/admin/shops", {
+        const response = await fetch("https://planetpay.onrender.com:10000/api/admin/shops", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
@@ -502,7 +502,7 @@
     
     // --- Shop Management Tab ---
     async function loadShops() {
-      const response = await fetch("https://planetpay.onrender.com:3000/api/admin/shops");
+      const response = await fetch("https://planetpay.onrender.com:10000/api/admin/shops");
       const shops = await response.json();
       
       const tbodyManage = document.getElementById("shopManageTable").querySelector("tbody");
@@ -541,7 +541,7 @@
     }
     
     async function toggleShopBan(shopId, banStatus) {
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/shops/${shopId}`, {
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/shops/${shopId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ banned: banStatus })
@@ -555,7 +555,7 @@
     
     async function deleteShop(shopId) {
       if(!confirm("Soll dieser Shop wirklich gelöscht werden?")) return;
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/shops/${shopId}`, {
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/shops/${shopId}`, {
         method: "DELETE"
       });
       if(response.ok) {
@@ -568,7 +568,7 @@
     // --- Shop Management – Bearbeitung im Modal ---
     async function openEditModal(shopId) {
       currentEditShopId = shopId;
-      const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/shops/${shopId}`);
+      const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/shops/${shopId}`);
       const shop = await response.json();
       document.getElementById("editShopName").value = shop.name;
       document.getElementById("editOwner").value = shop.owner;
@@ -614,7 +614,7 @@
       const payload = { name, owner, color, textStyle, font, status, products };
       
       try {
-        const response = await fetch(`https://planetpay.onrender.com:3000/api/admin/shops/${currentEditShopId}`, {
+        const response = await fetch(`https://planetpay.onrender.com:10000/api/admin/shops/${currentEditShopId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
