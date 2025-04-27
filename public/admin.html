@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - Planet Pay</title>
+  <style>
+    /* Grundlegendes Layout & Farbschema */
+    body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: #f0f0f0; }
+    .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+    h1 { text-align: center; color: #FFA500; margin-bottom: 20px; }
+    /* Admin Login */
+    #adminLoginSection { max-width: 400px; margin: 0 auto 20px auto; padding: 20px; background: #2b2b2b; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+    #adminLoginSection input, #adminLoginSection button { width: 100%; font-size: 1em; padding: 12px; margin-bottom: 15px; border: none; border-radius: 5px; }
+    #adminLoginSection button { background-color: #FFA500; color: #1a1a1a; cursor: pointer; transition: background-color 0.3s; }
+    #adminLoginSection button:hover { background-color: #e69500; }
+    /* Tab Navigation */
+    .tab-nav { display: flex; margin-bottom: 20px; border-bottom: 2px solid #444; }
+    .tab-nav button { flex: 1; padding: 12px; background: #2b2b2b; border: none; color: #f0f0f0; cursor: pointer; font-size: 1em; transition: background-color 0.3s; }
+    .tab-nav button:hover, .tab-nav button.active { background-color: #FFA500; color: #1a1a1a; }
+    /* Tab Content */
+    .tab-content > div { display: none; }
+    .tab-content > div.active { display: block; }
+    /* Tabellen */
+    table { width: 100%; border-collapse: collapse; background-color: #3b3b3b; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.5); margin-bottom: 20px; }
+    table th, table td { padding: 15px; text-align: center; border-bottom: 1px solid #444; }
+    table th { background-color: #FFA500; color: #1a1a1a; }
+    tr:hover { background-color: #555; transition: background-color 0.3s ease; }
+    .btn { padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+    .edit-btn { background-color: #FFA500; color: #1a1a1a; }
+    .edit-btn:hover { background-color: #e69500; }
+    .ban-btn { background-color: #e74c3c; color: #fff; }
+    .ban-btn:hover { background-color: #c0392b; }
+    /* Shop API Keys Tab */
+    .shop-api-container input, .shop-api-container button { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 5px; font-size: 1em; }
+    .shop-api-container button { background-color: #27ae60; color: #fff; cursor: pointer; transition: background-color 0.3s; }
+    .shop-api-container button:hover { background-color: #1e8449; }
+    /* Shop Creator Tab */
+    .shop-creator-container input, .shop-creator-container select, .shop-creator-container button { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 5px; font-size: 1em; }
+    .shop-creator-container input[type="color"] { padding: 3px; height: 40px; }
+    .shop-creator-container button { background-color: #27ae60; color: #fff; cursor: pointer; transition: background-color 0.3s; }
+    .shop-creator-container button:hover { background-color: #1e8449; }
+    .product-row { display: flex; gap: 10px; align-items: center; margin-bottom: 5px; }
+    .product-row input { flex: 1; }
+    .product-row button { flex: 0 0 auto; background-color: #e74c3c; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+    .product-row button:hover { background-color: #c0392b; }
+    /* Modal für Shop Bearbeitung */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal.active { display: flex; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-content { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 90%; max-width: 500px; position: relative; }
+    .modal-content h2 { margin-top: 0; color: #FFA500; }
+    .close-modal { position: absolute; top: 10px; right: 15px; background: transparent; border: none; font-size: 1.5em; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container" id="adminContainer">
+    <!-- Admin Login (nur einmal) -->
+    <div id="adminLoginSection">
+      <h1>Admin Login</h1>
+      <div class="login-form">
+        <input type="text" id="adminUsername" placeholder="Benutzername" required>
+        <input type="password" id="adminPassword" placeholder="Passwort" required>
+        <button type="button" onclick="adminLogin(event)">Login</button>
+      </div>
+      <p id="loginError" style="color: red; text-align:center;"></p>
+    </div>
+    
+    <!-- Admin Dashboard (nach Login) -->
+    <div id="adminDashboardSection" style="display: none;">
+      <h1>Admin Dashboard</h1>
+      <!-- Tab Navigation (4 Tabs) -->
+      <div class="tab-nav">
+        <button type="button" id="tab-users" class="active" onclick="showTab('users')">Benutzerverwaltung</button>
+        <button type="button" id="tab-api" onclick="showTab('api')">Shop API Keys</button>
+        <button type="button" id="tab-creator" onclick="showTab('creator')">Shop Creator</button>
+        <button type="button" id="tab-manage" onclick="showTab('manage')">Shop Management</button>
+      </div>
+      <div class="tab-content">
+        <!-- Tab 1: Benutzerverwaltung -->
+        <div id="userManagement" class="active">
+          <table id="userTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Benutzername</th>
+                <th>Passwort</th>
+                <th>Kontostand (€)</th>
+                <th>Banned</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody><!-- Dynamische Benutzerdaten --></tbody>
+          </table>
+        </div>
+        
+        <!-- Tab 2: Shop API Keys -->
+        <div id="shopAPIKeys">
+          <h2>Shop API Keys</h2>
+          <div class="shop-api-container">
+            <input type="text" id="shopApiName" placeholder="Shop Name" required>
+            <button type="button" onclick="generateShopKeyApi()">API Key generieren/aktualisieren</button>
+          </div>
+          <h2>API Key-Datensätze</h2>
+          <table id="apiKeyTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Shop Name</th>
+                <th>API Key</th>
+                <th>Status</th>
+                <th>Aktionen</th>
+                <th>Besuchen</th>
+              </tr>
+            </thead>
+            <tbody><!-- Dynamische API Key-Datensätze --></tbody>
+          </table>
+        </div>
+        
+        <!-- Tab 3: Shop Creator -->
+        <div id="shopCreator">
+          <h2>Neuen Shop erstellen</h2>
+          <div class="shop-creator-container" id="creatorContainer">
+            <input type="text" id="creatorShopName" placeholder="Shop Name" required>
+            <input type="text" id="creatorOwner" placeholder="Owner" required>
+            <!-- API Key manuell eingeben -->
+            <input type="text" id="creatorApiKey" placeholder="API Key (vom System)" required>
+            <div>
+              <label for="creatorColor">Farbwahl:</label>
+              <input type="color" id="creatorColor" value="#FFA500">
+            </div>
+            <div>
+              <label for="creatorTextStyle">Text Style:</label>
+              <select id="creatorTextStyle">
+                <option value="normal">Normal</option>
+                <option value="italic">Italic</option>
+                <option value="bold">Bold</option>
+              </select>
+            </div>
+            <div>
+              <label for="creatorFont">Font:</label>
+              <select id="creatorFont">
+                <option value="Arial">Arial</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+            </div>
+            <div>
+              <label for="creatorStatus">Status:</label>
+              <select id="creatorStatus">
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="discontinued">Discontinued</option>
+              </select>
+            </div>
+            <h3>Produkte</h3>
+            <div id="creatorProducts"></div>
+            <button type="button" onclick="addProductRow()">Produkt hinzufügen</button>
+            <br><br>
+            <button type="button" onclick="createShop()">Shop erstellen</button>
+          </div>
+        </div>
+        
+        <!-- Tab 4: Shop Management -->
+        <div id="shopManagement">
+          <h2>Shop Management</h2>
+          <table id="shopManageTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Shop Name</th>
+                <th>Owner</th>
+                <th>API Key</th>
+                <th>Domain</th>
+                <th>Farbe</th>
+                <th>Text Style</th>
+                <th>Font</th>
+                <th>Status</th>
+                <th>Produkte</th>
+                <th>Aktionen</th>
+                <th>Besuchen</th>
+              </tr>
+            </thead>
+            <tbody><!-- Dynamische Shop-Daten --></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal für Shop Bearbeitung -->
+  <div class="modal" id="editShopModal">
+    <div class="modal-content">
+      <button type="button" class="close-modal" onclick="closeEditModal()">×</button>
+      <h2>Shop bearbeiten</h2>
+      <div id="editShopForm">
+        <input type="text" id="editShopName" placeholder="Shop Name" required>
+        <input type="text" id="editOwner" placeholder="Owner" required>
+        <p>API Key: <span id="editApiKey"></span></p>
+        <p>Domain: <span id="editDomain"></span></p>
+        <div>
+          <label for="editColor">Farbwahl:</label>
+          <input type="color" id="editColor">
+        </div>
+        <div>
+          <label for="editTextStyle">Text Style:</label>
+          <select id="editTextStyle">
+            <option value="normal">Normal</option>
+            <option value="italic">Italic</option>
+            <option value="bold">Bold</option>
+          </select>
+        </div>
+        <div>
+          <label for="editFont">Font:</label>
+          <select id="editFont">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+          </select>
+        </div>
+        <div>
+          <label for="editStatus">Status:</label>
+          <select id="editStatus">
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+            <option value="maintenance">Maintenance</option>
+            <option value="discontinued">Discontinued</option>
+          </select>
+        </div>
+        <h3>Produkte</h3>
+        <div id="editProducts"></div>
+        <button type="button" onclick="addEditProductRow()">Produkt hinzufügen</button>
+        <br><br>
+        <button type="button" onclick="saveShopEdits()">Änderungen speichern</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal für User Bearbeitung -->
+  <div class="modal" id="editUserModal">
+    <div class="modal-content">
+      <button type="button" class="close-modal" onclick="closeUserEditModal()">×</button>
+      <h2>User bearbeiten</h2>
+      <div id="editUserForm">
+        <input type="text" id="editUsername" placeholder="Benutzername" required>
+        <input type="password" id="editPassword" placeholder="Passwort" required>
+        <input type="number" id="editBalance" placeholder="Kontostand" required step="0.01">
+        <button type="button" onclick="saveUserEdits()">Änderungen speichern</button>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let currentEditShopId = null;
+    let currentEditUserId = null;
+    
+    // --- Admin Login ---
+    function adminLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById("adminUsername").value;
+      const password = document.getElementById("adminPassword").value;
+      if (username === "Jamie" && password === "3006") {
+        document.getElementById("adminLoginSection").style.display = "none";
+        document.getElementById("adminDashboardSection").style.display = "block";
+        loadUsers();
+      } else {
+        document.getElementById("loginError").innerText = "Ungültige Zugangsdaten.";
+      }
+    }
+    
+    // --- Tab Navigation ---
+    function showTab(tab) {
+      const tabs = document.querySelectorAll(".tab-content > div");
+      tabs.forEach(div => div.classList.remove("active"));
+      let id;
+      switch(tab) {
+        case "users": id = "userManagement"; break;
+        case "api": id = "shopAPIKeys"; break;
+        case "creator": id = "shopCreator"; break;
+        case "manage": id = "shopManagement"; break;
+      }
+      document.getElementById(id).classList.add("active");
+      
+      const buttons = document.querySelectorAll(".tab-nav button");
+      buttons.forEach(btn => btn.classList.remove("active"));
+      document.getElementById("tab-" + tab).classList.add("active");
+      
+      if (tab === "api") loadApiKeys();
+      else if (tab === "manage") loadShops();
+    }
+    
+    // --- Benutzerverwaltung ---
+    async function loadUsers() {
+      const response = await fetch("http://localhost:3000/api/admin/users");
+      const users = await response.json();
+      const tbody = document.getElementById("userTable").querySelector("tbody");
+      tbody.innerHTML = "";
+      users.forEach(user => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.password}</td>
+            <td>${user.balance}</td>
+            <td>${user.banned ? "Ja" : "Nein"}</td>
+            <td>
+              <button class="btn edit-btn" type="button" onclick="openUserEditModal(${user.id}, '${user.username}', '${user.password}', ${user.balance})">Bearbeiten</button>
+              <button class="btn ban-btn" type="button" onclick="toggleUserBan(${user.id}, ${user.banned ? 'false' : 'true'})">
+                ${user.banned ? "Entbannen" : "Bannen"}
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    function openUserEditModal(id, username, password, balance) {
+      currentEditUserId = id;
+      document.getElementById("editUsername").value = username;
+      document.getElementById("editPassword").value = password;
+      document.getElementById("editBalance").value = balance;
+      document.getElementById("editUserModal").classList.add("active");
+    }
+    
+    async function saveUserEdits() {
+      const username = document.getElementById("editUsername").value;
+      const password = document.getElementById("editPassword").value;
+      const balance = parseFloat(document.getElementById("editBalance").value);
+      const response = await fetch(`http://localhost:3000/api/admin/users/${currentEditUserId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, balance })
+      });
+      if(response.ok) {
+        closeUserEditModal();
+        loadUsers();
+      } else {
+        alert("Fehler beim Aktualisieren des Nutzers.");
+      }
+    }
+    
+    function closeUserEditModal() {
+      document.getElementById("editUserModal").classList.remove("active");
+      currentEditUserId = null;
+    }
+    
+    async function toggleUserBan(id, banStatus) {
+      const response = await fetch(`http://localhost:3000/api/admin/users/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banned: banStatus })
+      });
+      if(response.ok){
+        loadUsers();
+      } else {
+        alert("Fehler beim Aktualisieren des Nutzers.");
+      }
+    }
+    
+    // --- Shop API Keys Tab ---
+    async function generateShopKeyApi() {
+      const shopName = document.getElementById("shopApiName").value;
+      if (!shopName) {
+        alert("Bitte gib einen Shop-Namen ein.");
+        return;
+      }
+      // Erstelle einen neuen API Key-Datensatz in der Collection "apikeys"
+      const response = await fetch("http://localhost:3000/api/apikeys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: shopName })
+      });
+      const result = await response.json();
+      if(response.ok) {
+        alert("API Key erstellt!\nAPI Key: " + result.record.apiKey);
+        loadApiKeys();
+      } else {
+        alert("Fehler: " + result.message);
+      }
+    }
+    
+    function loadApiKeys() {
+      fetch("http://localhost:3000/api/apikeys")
+        .then(response => response.json())
+        .then(records => {
+          const tbody = document.getElementById("apiKeyTable").querySelector("tbody");
+          tbody.innerHTML = "";
+          records.forEach(record => {
+            tbody.innerHTML += `
+              <tr>
+                <td>${record.id}</td>
+                <td>${record.name}</td>
+                <td>${record.apiKey}</td>
+                <td>${record.banned ? "Banned" : "Active"}</td>
+                <td>
+                  <button class="btn ban-btn" type="button" onclick="toggleApiKeyBan(${record.id}, ${record.banned ? 'false' : 'true'})">
+                    ${record.banned ? "Entbannen" : "Bannen"}
+                  </button>
+                  <button class="btn" type="button" onclick="deleteApiKey(${record.id})">Löschen</button>
+                  <button class="btn" type="button" onclick="visitShopKey('${record.name}')">Besuchen</button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+    }
+    
+    async function toggleApiKeyBan(id, banStatus) {
+      const response = await fetch(`http://localhost:3000/api/apikeys/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banned: banStatus })
+      });
+      if(response.ok){
+        loadApiKeys();
+      } else {
+        alert("Fehler beim Aktualisieren des API Key-Datensatzes.");
+      }
+    }
+    
+    async function deleteApiKey(id) {
+      if(!confirm("Soll dieser API Key-Datensatz wirklich gelöscht werden?")) return;
+      const response = await fetch(`http://localhost:3000/api/apikeys/${id}`, { method: "DELETE" });
+      if(response.ok) {
+        loadApiKeys();
+      } else {
+        alert("Fehler beim Löschen des API Key-Datensatzes.");
+      }
+    }
+    
+    function visitShopKey(shopName) {
+      // Navigiere zur Shop HTML-Datei, Dateiname = shopName (klein, ohne Leerzeichen) + ".html"
+      const url = `/${shopName.toLowerCase().replace(/\s+/g, "")}.html`;
+      window.open(url, "_blank");
+    }
+    
+    // --- Shop Creator Tab ---
+    function addProductRow() {
+      const container = document.getElementById("creatorProducts");
+      const div = document.createElement("div");
+      div.className = "product-row";
+      div.innerHTML = `
+        <input type="text" placeholder="Produktname" class="productName" required>
+        <input type="number" placeholder="Preis (€)" class="productPrice" required step="0.01">
+        <label>
+          <input type="checkbox" class="productAvailable" checked>
+          Verfügbar
+        </label>
+        <button type="button" onclick="this.parentNode.remove()">Entfernen</button>
+      `;
+      container.appendChild(div);
+    }
+    
+    async function createShop() {
+      const name = document.getElementById("creatorShopName").value;
+      const owner = document.getElementById("creatorOwner").value;
+      const apiKey = document.getElementById("creatorApiKey").value;
+      if (!/^[0-9a-f]{32}$/i.test(apiKey)) {
+        alert("Ungültiger API Key. Bitte gib einen gültigen, von uns verifizierten API Key ein.");
+        return;
+      }
+      const color = document.getElementById("creatorColor").value;
+      const textStyle = document.getElementById("creatorTextStyle").value;
+      const font = document.getElementById("creatorFont").value;
+      const status = document.getElementById("creatorStatus").value;
+      const productElements = document.querySelectorAll("#creatorProducts .product-row");
+      const products = Array.from(productElements).map(row => ({
+        name: row.querySelector(".productName").value,
+        price: parseFloat(row.querySelector(".productPrice").value),
+        available: row.querySelector(".productAvailable").checked
+      }));
+      const payload = { name, owner, apiKey, color, textStyle, font, status, products };
+      
+      try {
+        const response = await fetch("http://localhost:3000/api/admin/shops", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          alert("Shop erfolgreich erstellt!\n" + JSON.stringify(result.shop, null, 2));
+          document.getElementById("creatorShopName").value = "";
+          document.getElementById("creatorOwner").value = "";
+          document.getElementById("creatorApiKey").value = "";
+          document.getElementById("creatorColor").value = "#FFA500";
+          document.getElementById("creatorTextStyle").value = "normal";
+          document.getElementById("creatorFont").value = "Arial";
+          document.getElementById("creatorStatus").value = "online";
+          document.getElementById("creatorProducts").innerHTML = "";
+          loadShops();
+        } else {
+          alert("Fehler: " + result.message);
+        }
+      } catch (error) {
+        console.error("Fehler beim Erstellen des Shops:", error);
+        alert("Ein Fehler ist aufgetreten.");
+      }
+    }
+    
+    // --- Shop Management Tab ---
+    async function loadShops() {
+      const response = await fetch("http://localhost:3000/api/admin/shops");
+      const shops = await response.json();
+      
+      const tbodyManage = document.getElementById("shopManageTable").querySelector("tbody");
+      if(tbodyManage) {
+        tbodyManage.innerHTML = "";
+        shops.forEach(shop => {
+          let products = "";
+          if (shop.products && shop.products.length > 0) {
+            products = shop.products.map(p => `${p.name} (€${p.price.toFixed(2)}) ${p.available ? "✓" : "✗"}`).join("<br>");
+          } else {
+            products = "Keine Produkte";
+          }
+          tbodyManage.innerHTML += `
+            <tr>
+              <td>${shop.id}</td>
+              <td>${shop.name}</td>
+              <td>${shop.owner}</td>
+              <td>${shop.apiKey}</td>
+              <td>${shop.domain || "Nicht gesetzt"}</td>
+              <td>${shop.color || "Standard"}</td>
+              <td>${shop.textStyle || "normal"}</td>
+              <td>${shop.font || "Standard"}</td>
+              <td>${shop.status || "online"}</td>
+              <td>${products}</td>
+              <td>
+                <button class="btn edit-btn" type="button" onclick="openEditModal(${shop.id})">Bearbeiten</button>
+                <button class="btn" type="button" onclick="deleteShop(${shop.id})">Löschen</button>
+              </td>
+              <td>
+                <button class="btn" type="button" onclick="visitShop('${shop.name}')">Besuchen</button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    }
+    
+    async function toggleShopBan(shopId, banStatus) {
+      const response = await fetch(`http://localhost:3000/api/admin/shops/${shopId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ banned: banStatus })
+      });
+      if(response.ok){
+        loadShops();
+      } else {
+        alert("Fehler beim Aktualisieren des Shop-Status.");
+      }
+    }
+    
+    async function deleteShop(shopId) {
+      if(!confirm("Soll dieser Shop wirklich gelöscht werden?")) return;
+      const response = await fetch(`http://localhost:3000/api/admin/shops/${shopId}`, {
+        method: "DELETE"
+      });
+      if(response.ok) {
+        loadShops();
+      } else {
+        alert("Fehler beim Löschen des Shops.");
+      }
+    }
+    
+    // --- Shop Management – Bearbeitung im Modal ---
+    async function openEditModal(shopId) {
+      currentEditShopId = shopId;
+      const response = await fetch(`http://localhost:3000/api/admin/shops/${shopId}`);
+      const shop = await response.json();
+      document.getElementById("editShopName").value = shop.name;
+      document.getElementById("editOwner").value = shop.owner;
+      document.getElementById("editColor").value = shop.color || "#FFA500";
+      document.getElementById("editTextStyle").value = shop.textStyle || "normal";
+      document.getElementById("editFont").value = shop.font || "Arial";
+      document.getElementById("editStatus").value = shop.status || "online";
+      document.getElementById("editApiKey").innerText = shop.apiKey;
+      document.getElementById("editDomain").innerText = shop.domain || "Nicht gesetzt";
+      
+      const editProductsContainer = document.getElementById("editProducts");
+      editProductsContainer.innerHTML = "";
+      (shop.products || []).forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product-row";
+        div.innerHTML = `
+          <input type="text" value="${p.name}" class="editProductName" required>
+          <input type="number" value="${p.price}" step="0.01" class="editProductPrice" required>
+          <label>
+            <input type="checkbox" class="editProductAvailable" ${p.available ? "checked" : ""}>
+            Verfügbar
+          </label>
+          <button type="button" onclick="this.parentNode.remove()">Entfernen</button>
+        `;
+        editProductsContainer.appendChild(div);
+      });
+      document.getElementById("editShopModal").classList.add("active");
+    }
+    
+    async function saveShopEdits() {
+      const name = document.getElementById("editShopName").value;
+      const owner = document.getElementById("editOwner").value;
+      const color = document.getElementById("editColor").value;
+      const textStyle = document.getElementById("editTextStyle").value;
+      const font = document.getElementById("editFont").value;
+      const status = document.getElementById("editStatus").value;
+      const productElements = document.querySelectorAll("#editProducts .product-row");
+      const products = Array.from(productElements).map(row => ({
+        name: row.querySelector(".editProductName").value,
+        price: parseFloat(row.querySelector(".editProductPrice").value),
+        available: row.querySelector(".editProductAvailable").checked
+      }));
+      const payload = { name, owner, color, textStyle, font, status, products };
+      
+      try {
+        const response = await fetch(`http://localhost:3000/api/admin/shops/${currentEditShopId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (response.ok) {
+          alert("Shop erfolgreich aktualisiert!");
+          closeEditModal();
+          loadShops();
+        } else {
+          alert("Fehler: " + result.message);
+        }
+      } catch (error) {
+        console.error("Fehler beim Aktualisieren des Shops:", error);
+        alert("Ein Fehler ist aufgetreten.");
+      }
+    }
+    
+    function closeEditModal() {
+      document.getElementById("editShopModal").classList.remove("active");
+      currentEditShopId = null;
+    }
+    
+    function addEditProductRow() {
+      const container = document.getElementById("editProducts");
+      const div = document.createElement("div");
+      div.className = "product-row";
+      div.innerHTML = `
+        <input type="text" placeholder="Produktname" class="editProductName" required>
+        <input type="number" placeholder="Preis (€)" class="editProductPrice" required step="0.01">
+        <label>
+          <input type="checkbox" class="editProductAvailable" checked>
+          Verfügbar
+        </label>
+        <button type="button" onclick="this.parentNode.remove()">Entfernen</button>
+      `;
+      container.appendChild(div);
+    }
+    
+    // Button "Besuchen" in Shop Management
+    function visitShop(shopName) {
+      const url = `/${shopName.toLowerCase().replace(/\s+/g, "")}.html`;
+      window.open(url, "_blank");
+    }
+    
+    // Initiales Laden der API Keys bei Tab-Aktivierung
+    loadApiKeys();
+  </script>
+</body>
+</html>

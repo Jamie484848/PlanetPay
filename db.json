@@ -1,0 +1,59 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "max",
+      "password": "pass123",
+      "balance": 1000,
+      "banned": false
+    },
+    {
+      "id": 2,
+      "username": "anna",
+      "password": "secret",
+      "balance": 500,
+      "banned": false
+    },
+    {
+      "id": 3,
+      "username": "PVJamie",
+      "password": "3006",
+      "balance": 38.01,
+      "banned": false
+    }
+  ],
+  "shops": [
+    {
+      "id": 1,
+      "name": "pvmarket",
+      "owner": "pvjamie",
+      "apiKey": "a3a61cabb21b5a822473ac7d7e8af81f",
+      "domain": "pvmarket.planetpay.com",
+      "color": "#7016e9",
+      "textStyle": "normal",
+      "font": "Arial",
+      "status": "online",
+      "products": [
+        {
+          "name": "CS2 Chair x 1 Day",
+          "price": 2,
+          "available": true
+        },
+        {
+          "name": "test",
+          "price": 23,
+          "available": true
+        }
+      ],
+      "banned": false
+    }
+  ],
+  "apikeys": [
+    {
+      "id": 1,
+      "name": "pvmarket",
+      "apiKey": "a3a61cabb21b5a822473ac7d7e8af81f",
+      "banned": false
+    }
+  ]
+}

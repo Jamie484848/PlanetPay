@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Meine Zahlungsplattform</title>
+  <style>
+    /* Reset & Grundstil */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+    .container {
+      width: 90%;
+      max-width: 500px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      border: 2px solid #FFA500;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(255,165,0,0.5);
+      animation: fadeIn 1s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      text-align: center;
+      color: #FFA500;
+      margin-bottom: 20px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    }
+    h2 { color: #FFA500; margin-bottom: 15px; }
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: #fff;
+      font-size: 1em;
+      transition: background 0.3s ease;
+    }
+    input:focus { background: #444; outline: none; }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #FFA500;
+      color: #1a1a1a;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover { background: #e69500; }
+    .message {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 0.9em;
+    }
+    a {
+      color: #FFA500;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    /* Animation für das Dashboard */
+    #dashboard { animation: slideIn 0.5s ease; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(50px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Zahlungsplattform</h1>
+    
+    <!-- Login-Sektion -->
+    <div id="auth-section">
+      <h2>Login</h2>
+      <input type="text" id="username" placeholder="Benutzername">
+      <input type="password" id="password" placeholder="Passwort">
+      <button onclick="login()">Login</button>
+      <p class="message">Noch kein Konto? <a onclick="showRegister()">Registrieren</a></p>
+      <p class="message" id="auth-message"></p>
+    </div>
+    
+    <!-- Registrierungs-Sektion -->
+    <div id="register-section" style="display: none;">
+      <h2>Registrieren</h2>
+      <input type="text" id="reg-username" placeholder="Benutzername">
+      <input type="password" id="reg-password" placeholder="Passwort">
+      <button onclick="register()">Registrieren</button>
+      <p class="message">Bereits registriert? <a onclick="showLogin()">Login</a></p>
+      <p class="message" id="register-message"></p>
+    </div>
+    
+    <!-- Dashboard nach Login -->
+    <div id="dashboard" style="display: none;">
+      <h2>Dashboard</h2>
+      <p id="welcome"></p>
+      <button onclick="fetchBalance()">Kontostand abrufen</button>
+      <p id="balance"></p>
+      
+      <h2>Kauf durchführen</h2>
+      <input type="number" id="buy-amount" placeholder="Betrag in €">
+      <button onclick="buy()">Kaufen</button>
+      <p class="message" id="buy-message"></p>
+    </div>
+  </div>
+
+  <script>
+    let currentUserId = null;
+
+    function showRegister() {
+      document.getElementById("auth-section").style.display = "none";
+      document.getElementById("register-section").style.display = "block";
+    }
+    function showLogin() {
+      document.getElementById("auth-section").style.display = "block";
+      document.getElementById("register-section").style.display = "none";
+    }
+    async function register() {
+      const username = document.getElementById("reg-username").value;
+      const password = document.getElementById("reg-password").value;
+      const response = await fetch("http://localhost:3000/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById("register-message").style.color = "#27ae60";
+        document.getElementById("register-message").innerText = result.message;
+        setTimeout(showLogin, 1500);
+      } else {
+        document.getElementById("register-message").style.color = "red";
+        document.getElementById("register-message").innerText = result.message;
+      }
+    }
+    async function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const response = await fetch("http://localhost:3000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        currentUserId = result.userId;
+        document.getElementById("auth-message").innerText = "";
+        document.getElementById("auth-section").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        document.getElementById("welcome").innerText = "Willkommen, " + username + "!";
+      } else {
+        document.getElementById("auth-message").style.color = "red";
+        document.getElementById("auth-message").innerText = result.message;
+      }
+    }
+    async function fetchBalance() {
+      const response = await fetch(`http://localhost:3000/api/balance/${currentUserId}`);
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById("balance").innerText = "Kontostand: €" + result.balance;
+      } else {
+        document.getElementById("balance").innerText = result.message;
+      }
+    }
+    async function buy() {
+      const amount = parseFloat(document.getElementById("buy-amount").value);
+      const response = await fetch("http://localhost:3000/api/buy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, amount })
+      });
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById("buy-message").style.color = "#27ae60";
+        document.getElementById("buy-message").innerText = result.message + " Neuer Kontostand: €" + result.newBalance;
+      } else {
+        document.getElementById("buy-message").style.color = "red";
+        document.getElementById("buy-message").innerText = result.message;
+      }
+    }
+  </script>
+</body>
+</html>
